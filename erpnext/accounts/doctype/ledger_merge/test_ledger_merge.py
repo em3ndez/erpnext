@@ -1,14 +1,13 @@
 # Copyright (c) 2021, Wahni Green Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import unittest
-
 import frappe
 
 from erpnext.accounts.doctype.ledger_merge.ledger_merge import start_merge
+from erpnext.tests.utils import ERPNextTestSuite
 
 
-class TestLedgerMerge(unittest.TestCase):
+class TestLedgerMerge(ERPNextTestSuite):
 	def test_merge_success(self):
 		if not frappe.db.exists("Account", "Indirect Expenses - _TC"):
 			acc = frappe.new_doc("Account")
@@ -31,18 +30,17 @@ class TestLedgerMerge(unittest.TestCase):
 			acc.company = "_Test Company"
 			acc.insert()
 
-		doc = frappe.get_doc({
-			"doctype": "Ledger Merge",
-			"company": "_Test Company",
-			"root_type": frappe.db.get_value("Account", "Indirect Test Expenses - _TC", "root_type"),
-			"account": "Indirect Expenses - _TC",
-			"merge_accounts": [
-				{
-					"account": "Indirect Test Expenses - _TC",
-					"account_name": "Indirect Expenses"
-				}
-			]
-		}).insert(ignore_permissions=True)
+		doc = frappe.get_doc(
+			{
+				"doctype": "Ledger Merge",
+				"company": "_Test Company",
+				"root_type": frappe.db.get_value("Account", "Indirect Test Expenses - _TC", "root_type"),
+				"account": "Indirect Expenses - _TC",
+				"merge_accounts": [
+					{"account": "Indirect Test Expenses - _TC", "account_name": "Indirect Expenses"}
+				],
+			}
+		).insert(ignore_permissions=True)
 
 		parent = frappe.db.get_value("Account", "Administrative Test Expenses - _TC", "parent_account")
 		self.assertEqual(parent, "Indirect Test Expenses - _TC")
@@ -76,22 +74,21 @@ class TestLedgerMerge(unittest.TestCase):
 			acc.company = "_Test Company"
 			acc.insert()
 
-		doc = frappe.get_doc({
-			"doctype": "Ledger Merge",
-			"company": "_Test Company",
-			"root_type": frappe.db.get_value("Account", "Indirect Income - _TC", "root_type"),
-			"account": "Indirect Income - _TC",
-			"merge_accounts": [
-				{
-					"account": "Indirect Test Income - _TC",
-					"account_name": "Indirect Test Income"
-				},
-				{
-					"account": "Administrative Test Income - _TC",
-					"account_name": "Administrative Test Income"
-				}
-			]
-		}).insert(ignore_permissions=True)
+		doc = frappe.get_doc(
+			{
+				"doctype": "Ledger Merge",
+				"company": "_Test Company",
+				"root_type": frappe.db.get_value("Account", "Indirect Income - _TC", "root_type"),
+				"account": "Indirect Income - _TC",
+				"merge_accounts": [
+					{"account": "Indirect Test Income - _TC", "account_name": "Indirect Test Income"},
+					{
+						"account": "Administrative Test Income - _TC",
+						"account_name": "Administrative Test Income",
+					},
+				],
+			}
+		).insert(ignore_permissions=True)
 
 		parent = frappe.db.get_value("Account", "Administrative Test Income - _TC", "parent_account")
 		self.assertEqual(parent, "Indirect Test Income - _TC")
@@ -104,15 +101,15 @@ class TestLedgerMerge(unittest.TestCase):
 		self.assertFalse(frappe.db.exists("Account", "Indirect Test Income - _TC"))
 		self.assertTrue(frappe.db.exists("Account", "Administrative Test Income - _TC"))
 
-	def tearDown(self):
-		for entry in frappe.db.get_all("Ledger Merge"):
-			frappe.delete_doc("Ledger Merge", entry.name)
+	def test_account_type_is_fetched_from_account(self):
+		doc = frappe.get_doc(
+			{
+				"doctype": "Ledger Merge",
+				"company": "_Test Company",
+				"root_type": "Asset",
+				"account": "Debtors - _TC",
+				"merge_accounts": [{"account": "_Test Receivable - _TC", "account_name": "_Test Receivable"}],
+			}
+		).insert(ignore_permissions=True)
 
-		test_accounts = [
-			"Indirect Test Expenses - _TC",
-			"Administrative Test Expenses - _TC",
-			"Indirect Test Income - _TC",
-			"Administrative Test Income - _TC"
-		]
-		for account in test_accounts:
-			frappe.delete_doc_if_exists("Account", account)
+		self.assertEqual(doc.account_type, "Receivable")

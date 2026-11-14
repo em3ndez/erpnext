@@ -12,6 +12,14 @@ exemptProjects: true
 # Set to true to ignore issues in a milestone (defaults to false)
 exemptMilestones: true
 
+# Skip the stale action for draft PRs
+exemptDraftPr: true
+
+# Issues or Pull Requests with these labels will never be considered stale. Set to `[]` to disable
+exemptLabels:
+  - hotfix
+  - no-stale
+
 pulls:
   daysUntilStale: 15
   daysUntilClose: 3
@@ -24,13 +32,4 @@ pulls:
     :) Also, even if it is closed, you can always reopen the PR when you're
     ready. Thank you for contributing.
 
-issues:
-  daysUntilStale: 60
-  daysUntilClose: 7
-  exemptLabels:
-    - valid
-    - to-validate
-  markComment: >
-    This issue has been automatically marked as inactive because it has not had
-    recent activity and it wasn't validated by maintainer team. It will be
-    closed within a week if no further activity occurs.
+only: pulls
